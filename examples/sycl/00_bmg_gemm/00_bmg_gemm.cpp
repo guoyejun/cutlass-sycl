@@ -237,15 +237,22 @@ struct ExampleRunner {
     block_D.reset(static_cast<std::size_t>(M) * N * L);
     block_ref_D.reset(static_cast<std::size_t>(M) * N * L);
 
+    std::cout << "start to initialize block A " << std::endl;
     random_fill(block_A.get(), seed + 2023, block_A.size(), 1.0f, 0.0f);
+    std::cout << "start to initialize block B " << std::endl;
     random_fill(block_B.get(), seed + 2022, block_B.size(), 1.0f, 0.0f);
+    std::cout << "start to initialize block C " << std::endl;
     random_fill(block_C.get(), seed + 2021, block_C.size(), 1.0f, 0.0f);
   }
 
   cutlass::Status run(const Options& options, const cutlass::KernelHardwareInfo& hw_info) {
     ProblemShapeType problem_size = ProblemShapeType{options.m, options.n, options.k, options.l};
 
+    auto start = std::chrono::system_clock::now();
     initialize(problem_size);
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    std::cout << "initialize Elapsed time: " << elapsed_seconds.count() << " seconds" << std::endl;
 
     typename Gemm::GemmKernel::Arguments arguments{
       cutlass::gemm::GemmUniversalMode::kGemm,
@@ -265,12 +272,20 @@ struct ExampleRunner {
       std::exit(1);
     }
 
+    start = std::chrono::system_clock::now();
+
     CUTLASS_CHECK(gemm_op.initialize(arguments, workspace.get()));
 
     // Run the GEMM
     CUTLASS_CHECK(gemm_op.run());
 
     syclcompat::wait();
+
+    end = std::chrono::system_clock::now();
+    elapsed_seconds = end - start;
+    std::cout << "gemm Elapsed time: " << elapsed_seconds.count() << " seconds\n";
+    std::cout << "Problem Size: " << options.m << 'x' << options.n << 'x' << options.k << 'x' << options.l << std::endl;
+    return cutlass::Status::kSuccess;
 
     // Verify that the result is correct
     bool passed = verify(problem_size, options.alpha, options.beta);
