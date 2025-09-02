@@ -237,12 +237,14 @@ struct ExampleRunner {
     block_D.reset(static_cast<std::size_t>(M) * N * L);
     block_ref_D.reset(static_cast<std::size_t>(M) * N * L);
 
-    std::cout << "start to initialize block A " << std::endl;
-    initialize_block(block_A, seed + 2023);
-    std::cout << "start to initialize block B " << std::endl;
-    initialize_block(block_B, seed + 2022);
-    std::cout << "start to initialize block C " << std::endl;
-    initialize_block(block_C, seed + 2021);
+    cutlass::DeviceAllocation<ElementA> tmp1;
+    cutlass::DeviceAllocation<ElementA> tmp2;
+    tmp1.reset(32*1024*1024);
+    tmp2.reset(32*1024*1024);
+    std::cout << std::time(nullptr) << " start to initialize tmp1 " << std::endl;
+    initialize_block(tmp1, seed + 2020);
+    std::cout << std::time(nullptr) << " start to initialize tmp2 " << std::endl;
+    initialize_block(tmp2, seed + 2019);
   }
 
   cutlass::Status run(const Options& options, const cutlass::KernelHardwareInfo& hw_info) {
